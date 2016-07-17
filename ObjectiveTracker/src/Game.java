@@ -1,16 +1,17 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * @author Mark
  *
  */
-public class Game {
+public class Game implements Serializable {
 
+	private static final long serialVersionUID = -900082779300756640L;
+	
 	private ArrayList<Character> charactersList = new ArrayList<Character>();
 	private String name = "";
-	/**
-	 * 
-	 */
+
 	public Game() {
 		
 	}

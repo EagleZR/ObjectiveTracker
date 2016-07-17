@@ -1,11 +1,14 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * @author Mark
  *
  */
-public class Character {
-
+public class Character implements Serializable {
+	
+	private static final long serialVersionUID = -5183669650292301742L;
+	
 	private String name = "";
 	private Game game;
 	private ArrayList<Task> taskList = new ArrayList<Task>();
