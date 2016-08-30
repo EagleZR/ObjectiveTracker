@@ -1,10 +1,14 @@
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
  * @author Mark Zeagler.
  * Determines the rate at which something recurs, whether by hour, day, week, month, etc.
  */
-public class Recurrence {
+public class Recurrence implements Serializable {
+	
+	private static final long serialVersionUID = 5754868922670871930L;
 	
 	//Useful for levels
 	public final int YEAR = 6;
@@ -27,11 +31,15 @@ public class Recurrence {
 	private int month[] = new int[31];
 	private int year_m[] = new int[12];
 	private int year_d[] = new int[365];
+	private boolean year_m_used = false;
+	private boolean year_d_used = false; //redundant
 	
 	private Recurrence actingOn = null; //If not acting on another recurrence, it is acting on a date.
-	private Date rootDate = null; //If no root date, acting on another recurrence.
 	private int recurrenceLevel = 0; //For reacting recurrences, acting recurrence must have higher level than acted-upon recurrence
 	
+	/**
+	 * Empty constructor. Only use as a place-holder.
+	 */
 	public Recurrence() {
 		
 	}
@@ -43,8 +51,7 @@ public class Recurrence {
 	 * @param skips The number of units (determined by level) to be skipped. e.g. (level = 2 && skips == 1) == occurs every other day
 	 * @param repetitions The number of times the event occurs in the sequence. 
 	 */
-	public Recurrence(Date setRootDate, int setLevel, int setSkips, int setRepetitions){
-		this.rootDate = setRootDate;
+	public Recurrence(int setLevel, int setSkips, int setRepetitions){
 		this.recurrenceLevel = setLevel;
 		this.skips = setSkips;
 		this.repetitions = setRepetitions; 
@@ -64,45 +71,193 @@ public class Recurrence {
 		this.repetitions = setRepetitions;
 	}
 	
-	public Recurrence(int[] recurringArray, int level){
+	/**
+	 * Defines a recurrence based on the submitted selection array.
+	 * @param setSelection The selection of what is to recur. A Monday, Wednesday, Friday recurrence would be passed as an array of {0,1,0,1,0,1,0}.
+	 * @param level The level being modified. e.g. If the selection is a recurring day of the week, the level would be Recurrence.DAY.
+	 */
+	public Recurrence(int[] setSelection, int level){
 		this.recurrenceLevel = level;
 		if(level == this.YEAR){
-			if(recurringArray.length > 31){
-				this.year_d = recurringArray;
+			if(setSelection.length > 31){
+				this.year_d = setSelection;
+				this.year_d_used = true;
 			} else {
-				this.year_m = recurringArray;
+				this.year_m = setSelection;
+				this.year_m_used = true;
 			}
 		} else if (level == this.MONTH){
-			this.month = recurringArray;
+			this.month = setSelection;
 		} else if (level == this.WEEK){
-			this.week = recurringArray;
+			this.week = setSelection;
 		} else if (level == this.DAY){
-			this.day = recurringArray;
+			this.day = setSelection;
 		} else if (level == this.HOUR){
-			this.hour = recurringArray;
+			this.hour = setSelection;
 		} else if (level == this.MINUTE){
-			this.minute = recurringArray;
+			this.minute = setSelection;
 		}
 	}
 	
-	public Recurrence(Recurrence recurrenceModified, int[] recurringArray, int level){
+	/**
+	 * Defines a selection recurrence which is acting on another recurrence. 
+	 * @param recurrenceModified The other recurrence this one is acting on.
+	 * @param setSelection The selection of what is to recur. A Monday, Wednesday, Friday recurrence would be passed as an array of {0,1,0,1,0,1,0}. 
+	 * @param level The level being modified. e.g. If the selection is a recurring day of the week, the level would be Recurrence.DAY.
+	 */
+	public Recurrence(Recurrence recurrenceModified, int[] setSelection, int level){
 		this.recurrenceLevel = level;
 		this.actingOn = recurrenceModified;
 		if(level == this.YEAR){
-			if(recurringArray.length > 31){
-				this.year_d = recurringArray;
+			if(setSelection.length > 31){
+				this.year_d = setSelection;
+				this.year_d_used = true;
 			} else {
-				this.year_m = recurringArray;
+				this.year_m = setSelection;
+				this.year_m_used = true;
 			}
 		} else if (level == this.MONTH){
-			this.month = recurringArray;
+			this.month = setSelection;
 		} else if (level == this.WEEK){
-			this.week = recurringArray;
+			this.week = setSelection;
 		} else if (level == this.DAY){
-			this.day = recurringArray;
+			this.day = setSelection;
 		} else if (level == this.HOUR){
-			this.hour = recurringArray;
+			this.hour = setSelection;
 		} 
 	}
 
+	/**
+	 * Sets the new skip pattern based on the given int.
+	 * @param setSkips The amount of units to be skipped at this level before a repetition.
+	 */
+	public void setSkips(int setSkips){
+		this.skips = setSkips;
+	}
+	
+	/**
+	 * Returns the skip pattern at this level.
+	 * @return The int that defines how many units are skipped at this level.
+	 */
+	public int getSkips(){
+		return this.skips;
+	}
+	
+	/**
+	 * Sets the new repetitions pattern for this level.
+	 * @param setRepetitions The int value that indicates how many times this pattern is to be repeated. 
+	 */
+	public void setRepetitions(int setRepetitions){
+		this.repetitions = setRepetitions;
+	}
+	
+	/**
+	 * Returns the number of times this pattern is to be repeated at this level. 
+	 * @return The int value that determines how many times this level's pattern is repeated. 
+	 */
+	public int getRepetitions(){
+		return this.repetitions;
+	}
+	
+	/**
+	 * Sets a new selection for this level.
+	 * @param setSelection The new selection for this level. Be sure it matches the formatting the level currently uses.
+	 */
+	public void setSelection(int[] setSelection){
+		if(this.recurrenceLevel == this.YEAR){
+			if(this.year_d_used){
+				this.year_d = setSelection;
+			} else if (this.year_m_used){
+				this.year_m = setSelection;
+			}
+		} else if (this.recurrenceLevel == this.MONTH){
+			this.month = setSelection;
+		} else if (this.recurrenceLevel == this.WEEK){
+			this.week = setSelection;
+		} else if (this.recurrenceLevel == this.DAY){
+			this.day = setSelection;
+		} else if (this.recurrenceLevel == this.HOUR){
+			this.hour = setSelection;
+		} else if (this.recurrenceLevel == this.MINUTE){
+			this.minute = setSelection;
+		}
+	}
+	
+	/**
+	 * Returns the selection that is being used at this level of recurrence. 
+	 * @return An int[] containing the selection being used at this level.
+	 */
+	public int[] getSelection(){
+		if(this.recurrenceLevel == this.YEAR){
+			if(this.year_d_used){
+				return this.year_d;
+			} else if (this.year_m_used){
+				return this.year_m;
+			}
+		} else if (this.recurrenceLevel == this.MONTH){
+			return this.month;
+		} else if (this.recurrenceLevel == this.WEEK){
+			return this.week;
+		} else if (this.recurrenceLevel == this.DAY){
+			return this.day;
+		} else if (this.recurrenceLevel == this.HOUR){
+			return this.hour;
+		} else if (this.recurrenceLevel == this.MINUTE){
+			return this.minute;
+		}
+			return null;
+	}
+
+	/**
+	 * Returns the recurrence this one is acting on.
+	 * @return The recurrence object this recurrence is modifying.
+	 */
+	public Recurrence getActingOn(){
+		return this.actingOn;
+	}
+	
+	/**
+	 * Returns whether or not this recurrence is modifying another recurrence object.
+	 * @return True if this is modifying another recurrence object.
+	 */
+	public boolean isActingOn(){
+		return !this.actingOn.equals(null);
+	}
+
+	/**
+	 * Returns an ArrayList<Date> of the next n dates in the recurrence following the provided date. 
+	 * @param n The number of dates to be generated.
+	 * @param rootDate The start date (exclusive) for the calculation. 
+	 * @return
+	 */
+	public ArrayList<Date> generateNextDates(int n, Date rootDate){
+		ArrayList<Date> returnArray = new ArrayList<Date>();
+		if (this.repetitions == 0){
+			generateNextSelection(n, returnArray, rootDate);
+		} else {
+			generateNextRepetition(n, returnArray, rootDate);
+		}
+		return returnArray;
+	}
+	
+	private ArrayList<Date> generateNextSelection(int n, ArrayList<Date> returnArray, Date currDate){
+		// 1. TODO Determine scale
+		// 1a. TODO Check if there is a nested Recurrence (?)
+		// 2. TODO Progress through a calendar of determined scale
+		// 3. TODO Check if current Year/Month/Week/etc. fits in recurrence
+		// 4. TODO Add current date to ArrayList
+		// 5. TODO If returnArray.size() == n, then return the returnArray
+		// TODO how the fuck am i gonna handle nested recurrences?!?
+		return returnArray;
+	}
+	
+	private ArrayList<Date> generateNextRepetition(int n, ArrayList<Date> returnArray, Date currDate){
+		// 1. TODO Determine scale
+		// 1a. TODO Check if there is a nested Recurrence (?)
+		// 2. TODO Add this.skips units, per the scale, to the current date
+		// 3. TODO Add that date to the returnArray
+		// 4. TODO If returnArray.size() == n, return the returnArray
+		// TODO figure out how the hell to handle nested recurrences
+		return returnArray;
+	}
 }
